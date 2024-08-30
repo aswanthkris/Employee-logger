@@ -4,7 +4,7 @@ import Image from "next/image";
 const brandData: BRAND[] = [
   {
     logo: "/images/brand/brand-01.svg",
-    name: "Google",
+    name: "Premium BC update",
     visitors: 3.5,
     revenues: "5,768",
     sales: 590,
@@ -48,34 +48,34 @@ const TableOne = () => {
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pb-2.5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white">
-        Top Channels
+        My tasks
       </h4>
 
       <div className="flex flex-col">
         <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-5">
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Source
+              Task Name
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Visitors
+              Status
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Revenues
+              Committed
             </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Sales
+              Completion
             </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Conversion
+              Remarks
             </h5>
           </div>
         </div>
@@ -90,9 +90,9 @@ const TableOne = () => {
             key={key}
           >
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
-              <div className="flex-shrink-0">
+              {/* <div className="flex-shrink-0">
                 <Image src={brand.logo} alt="Brand" width={48} height={48} />
-              </div>
+              </div> */}
               <p className="hidden text-black dark:text-white sm:block">
                 {brand.name}
               </p>

@@ -46,8 +46,8 @@ const menuGroups = [
           </svg>
         ),
         label: "Dashboard",
-        route: "#",
-        children: [{ label: "eCommerce", route: "/" }],
+        route: "/dashboard",
+        // children: [{ label: "eCommerce", route: "/" }],
       },
       {
         icon: (
@@ -334,12 +334,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         }`}
       >
         {/* <!-- SIDEBAR HEADER --> */}
-        <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
-          <Link href="/">
+        <div className="flex items-center justify-between gap-2 bg-white px-6 py-5.5 lg:py-5.5">
+          <Link href="/dashboard">
             <Image
               width={176}
-              height={32}
-              src={"/images/logo/logo.svg"}
+              height={30}
+              src={"/images/logo/ACE_MONEY_MASTER_LOGO0.png"}
               alt="Logo"
               priority
             />
