@@ -12,7 +12,16 @@ export interface SignedUpData {
 export interface LoggedInData {
   status: boolean;
   message: string;
-  data: object;
+  data: {
+    userData: {
+      fullname: string;
+      empid: string;
+      phoneno: string;
+      email: string;
+      designation: string;
+      department: string;
+    };
+  };
   token: string;
 }
 export type SignupResponse = {
@@ -24,4 +33,8 @@ export type LoginResponse = {
 export type LoginValues = {
   employeeId: string;
   password: string;
+};
+export type ProfileUpdateValues = {
+  designation: string;
+  department: string;
 };

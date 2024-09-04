@@ -1,4 +1,4 @@
-import Dashboard from "@/components/Dashboard/Dashboard";
+import Dashboard from "@/components/Dashboard/page";
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import SignIn from "./auth/signin/page";

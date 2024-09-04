@@ -1,31 +1,45 @@
 "use client";
 import dynamic from "next/dynamic";
-import React, { useEffect } from "react";
-import ChartOne from "../Charts/ChartOne";
-import ChartTwo from "../Charts/ChartTwo";
-import ChatCard from "../Chat/ChatCard";
-import TableOne from "../Tables/TableOne";
-import CardDataStats from "../CardDataStats";
-import AddTask from "../AddTask/AddTaks";
+import React, { useEffect, useState } from "react";
+// import ChartOne from "../Charts/ChartOne";
+// import ChartTwo from "../Charts/ChartTwo";
+// import ChatCard from "../Chat/ChatCard";
+// import TableOne from "../Tables/TableOne";
+// import CardDataStats from "../CardDataStats";
+import AddTask from "../TaskMangement/AddTaks";
 import { useRecoilState } from "recoil";
 import { userAtom } from "@/app/atoms/userAtom";
 import { useRouter } from "next/navigation";
+import TaskListTable from "../TaskMangement/TaskList";
+import { isTokenExpired } from "@/lib/jwtValidation";
 
-const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
-  ssr: false,
-});
+// const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
+//   ssr: false,
+// });
 
-const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
-  ssr: false,
-});
+// const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
+//   ssr: false,
+// });
 
 const Dashboard: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useRecoilState(userAtom);
-  console.log("session user", user);
+  const [updateProfileComplete, setUpdateProfileComplete] = useState(true);
+  console.log("user", user);
+  const userData = user?.userData;
+  const isProfileCompleted = user?.profileComplete;
   useEffect(() => {
-    const isValidUser = user?.token;
-    if (!isValidUser) router.push("/");
+    const jwtToken = user?.token;
+    const isExpired = isTokenExpired(jwtToken);
+    if (isExpired) {
+      router.push("/");
+    } else {
+      if (!isProfileCompleted) {
+        router.push("/auth/profileCompletion");
+      } else {
+        setUpdateProfileComplete(true);
+      }
+    }
   });
   return (
     <>
@@ -125,7 +139,7 @@ const Dashboard: React.FC = () => {
           <AddTask />
         </div>
         <div className="col-span-12 xl:col-span-12">
-          <TableOne />
+          <TaskListTable />
         </div>
         {/* <ChatCard /> */}
       </div>

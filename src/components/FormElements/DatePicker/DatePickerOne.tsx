@@ -1,11 +1,13 @@
 import flatpickr from "flatpickr";
-import { useEffect } from "react";
-
-const DatePickerOne = () => {
+import React, { useEffect } from "react";
+interface DatePickerOneProps {
+  handleDatePicker: (status: string) => void;
+}
+const DatePickerOne: React.FC<DatePickerOneProps> = ({ handleDatePicker }) => {
   useEffect(() => {
     // Init flatpickr
     flatpickr(".form-datepicker", {
-      mode: "single",
+      mode: "range",
       static: true,
       monthSelectorType: "static",
       dateFormat: "M j, Y",
@@ -13,8 +15,22 @@ const DatePickerOne = () => {
         '<svg className="fill-current" width="7" height="11" viewBox="0 0 7 11"><path d="M5.4 10.8l1.4-1.4-4-4 4-4L5.4 0 0 5.4z" /></svg>',
       nextArrow:
         '<svg className="fill-current" width="7" height="11" viewBox="0 0 7 11"><path d="M1.4 10.8L0 9.4l4-4-4-4L1.4 0l5.4 5.4z" /></svg>',
+      onChange: (selectedDates, dateStr) => {
+        if (selectedDates.length === 2) {
+          const start = formatDate(selectedDates[0]);
+          const end = formatDate(selectedDates[1]);
+          handleDatePicker(`${start} to ${end}`);
+        }
+      },
     });
   }, []);
+  // Helper function to format date to DD/MM/YYYY
+  const formatDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div>

@@ -7,9 +7,11 @@ interface SelectGroupTwoProps {
     placeholder: string;
     items: string[];
   };
+  getChoosedStatus: (status: string) => void;
 }
 const SelectGroupTwo: React.FC<SelectGroupTwoProps> = ({
   options,
+  getChoosedStatus,
   ...props
 }) => {
   const [selectedOption, setSelectedOption] = useState<string>("");
@@ -30,6 +32,7 @@ const SelectGroupTwo: React.FC<SelectGroupTwoProps> = ({
           value={selectedOption}
           onChange={(e) => {
             setSelectedOption(e.target.value);
+            getChoosedStatus(e.target.value);
             changeTextColor();
           }}
           className={`relative z-20 w-full appearance-none rounded border border-stroke bg-transparent px-12 py-3 outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input ${

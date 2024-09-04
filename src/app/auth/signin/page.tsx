@@ -12,33 +12,47 @@ import { useRecoilState } from "recoil";
 import { userAtom } from "@/app/atoms/userAtom";
 import { useRouter } from "next/navigation";
 import DangerAlert from "@/components/Alerts/DangerAlert";
+import { isTokenExpired } from "@/lib/jwtValidation";
 
 const SignIn: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useRecoilState(userAtom);
   const [loginFailMessage, setLoginFailMessage] = useState("");
-  console.log("user", user?.token);
+  const [loading, setLoading] = useState(false);
 
   const handleLoginSubmit = async (values: LoginValues) => {
-    setLoginFailMessage("");
-    const loginPayload = {
-      empid: values?.employeeId,
-      password: values?.password,
-    };
-    const response = (await signInUserApi(loginPayload)) as LoginResponse;
-    if (response?.data?.status) {
-      const token = response?.data?.token;
-      const userData = { ...response?.data?.data, token };
-      setUser(userData);
-      router.push("/dashboard");
-    } else {
-      setLoginFailMessage(response?.data?.message);
+    try {
+      setLoading(true);
+      setLoginFailMessage("");
+      const loginPayload = {
+        empid: values?.employeeId,
+        password: values?.password,
+      };
+      const response = (await signInUserApi(loginPayload)) as LoginResponse;
+      if (response?.data?.status) {
+        const userDataInLogin = response.data.data?.userData;
+        const token = response?.data?.token;
+        let profileComplete;
+        if (userDataInLogin?.department && userDataInLogin?.designation) {
+          profileComplete = true;
+        } else {
+          profileComplete = false;
+        }
+        const userData = { ...response?.data?.data, token };
+        setUser(userData);
+        router.push("/dashboard");
+        setLoading(false);
+      } else {
+        setLoading(false);
+        setLoginFailMessage(response?.data?.message);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   };
   useEffect(() => {
-    if (user?.token) {
-      router.push("/dashboard");
-    }
+    const isExpired = isTokenExpired(user?.token);
+    if (!isExpired) router.push("/dashboard");
   }, []);
   return (
     // <DefaultLayout>
@@ -308,10 +322,10 @@ const SignIn: React.FC = () => {
                     <div className="mb-5 mt-3">
                       <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={loading}
                         className="mt-3 w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90"
                       >
-                        {isSubmitting ? "Submitting..." : "Sign In"}
+                        {loading ? "Submitting..." : "Sign In"}
                       </button>
                     </div>
                     <div className="mt-6 text-center">

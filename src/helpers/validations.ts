@@ -25,3 +25,7 @@ export const LoginSchema = Yup.object().shape({
 
   password: Yup.string().required("Required"),
 });
+export const ProfileUpdateScheme = Yup.object().shape({
+  department: Yup.string().required("Please specify your team !"),
+  designation: Yup.string().required("Please specify your designation!"),
+});

@@ -1,71 +1,76 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Formik, Form, Field } from "formik";
-import { SignupSchema } from "@/helpers/validations";
-import { signInUserApi, signupUserApi } from "@/app/API/[...nextauth]";
-import { SignupValues, SignupResponse, LoginResponse } from "@/types/signup";
-import DangerAlert from "@/components/Alerts/DangerAlert";
-import { useRouter } from "next/navigation";
+import { ProfileUpdateScheme } from "@/helpers/validations";
 import { useRecoilState } from "recoil";
 import { userAtom } from "@/app/atoms/userAtom";
-// import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-// import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { useRouter } from "next/navigation";
+import DangerAlert from "@/components/Alerts/DangerAlert";
+import { isTokenExpired } from "@/lib/jwtValidation";
+import Image from "next/image";
+import { updateProfileApi } from "@/app/API/[...userAPI]";
+import { ProfileUpdateValues } from "@/types/signup";
+import { BasicResponseFormat } from "@/types/tasks";
 
-const SignUp: React.FC = () => {
+const ProfileCompletion: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useRecoilState(userAtom);
-  const [signupFailMessage, setSignupFailMessage] = useState("");
-  //HANDLER FUNCTIONS
-  const handleSignupSubmit = async (values: SignupValues) => {
-    setSignupFailMessage("");
-    const payload = {
-      fullname: values.name,
-      email: values.email,
-      empid: values.employeeId,
-      password: values.password,
-      phoneno: values.phoneNumber,
-    };
-    const response = (await signupUserApi(payload)) as SignupResponse;
-    if (response?.data?.status) {
-      const loginPayload = {
-        empid: values.employeeId,
-        password: values.password,
+  console.log("user atom", user);
+
+  const [failMessage, setFailMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isUpdateFailed, setIsUpdateFailed] = useState(false);
+  const userData = user?.userData;
+  const handleUpdateSubmit = async (values: ProfileUpdateValues) => {
+    try {
+      setLoading(true);
+      console.log("submitted", values);
+      const payload = {
+        empid: userData?.empid,
+        designation: values.designation,
+        team: values.department,
+        user,
       };
-      const response = (await signInUserApi(loginPayload)) as LoginResponse;
-      console.log("response login", response);
-      if (response.data.status) {
-        const userDataInLogin = response.data.data?.userData;
-        const token = response?.data.token;
-        let profileComplete;
-        if (userDataInLogin?.department && userDataInLogin?.designation) {
-          profileComplete = true;
-        } else {
-          profileComplete = false;
-        }
-        const userData = { ...response?.data?.data, token, profileComplete };
-        setUser(userData);
-        router.push("/dashboard");
+      const response = (await updateProfileApi(payload)) as BasicResponseFormat;
+      console.log("response update profile", response);
+      if (response.data?.status) {
+        const userNewData = { ...user, profileComplete: true };
+        setUser(userNewData);
+        setFailMessage("");
+        router.push("/");
+        setLoading(false);
       } else {
-        router.push("/auth/signin");
+        setLoading(false);
       }
-    } else {
-      setSignupFailMessage(response?.data?.message);
+    } catch (error) {
+      setLoading(false);
+      console.log("error", error);
     }
   };
-
+  useEffect(() => {
+    const jwtToken = user?.token;
+    const isExpired = isTokenExpired(jwtToken);
+    if (isExpired) {
+      router.push("/");
+    } else {
+      if (user?.profileComplete) {
+      } else {
+        // router.push("/dashboard");
+      }
+    }
+  });
   return (
     // <DefaultLayout>
-
     <>
+      {/* <Breadcrumb pageName="Sign In" /> */}
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
               <Link className="mb-5.5 inline-block" href="/">
                 <Image
-                  className="hidden dark:block"
+                  className="hidden pt-0 dark:block"
                   src={"/images/logo/ACE_MONEY_MASTER_LOGO0.png"}
                   alt="Logo"
                   width={256}
@@ -79,6 +84,7 @@ const SignUp: React.FC = () => {
                   height={32}
                 />
               </Link>
+
               <p className="2xl:px-20">
                 Empowers You to Seamlessly Log, Track and Optimize Your Work —
                 Enhancing Our Collective Productivity.
@@ -211,161 +217,56 @@ const SignUp: React.FC = () => {
 
           <div className="w-full border-stroke dark:border-strokedark xl:w-1/2 xl:border-l-2">
             <div className="w-full p-4 sm:p-12.5 xl:p-17.5">
-              <span className="mb-1.5 block font-medium">
-                Streamline Your Work Logs
+              <span className="mb-9 text-xs font-bold text-black dark:text-white sm:text-title-xl2">
+                Wooho... You're almost there!
+                <br /> Please tell us these details to unlock the full
+                experience.🚀
               </span>
-              <h2 className="mb-9 text-2xl font-bold text-black dark:text-white sm:text-title-xl2">
-                Sign Up to Radiant Acemoney
-              </h2>
-
               <Formik
                 initialValues={{
-                  name: "",
-                  employeeId: "",
-                  email: "",
-                  phoneNumber: "",
-                  password: "",
+                  department: "",
+                  designation: "",
                 }}
-                validationSchema={SignupSchema}
-                onSubmit={(values) => handleSignupSubmit(values)}
+                validationSchema={ProfileUpdateScheme}
+                onSubmit={(values) => handleUpdateSubmit(values)}
               >
                 {({ errors, touched, isSubmitting }) => (
                   <Form>
-                    <div className="mb-4">
+                    <div className="mb-4 mt-6">
                       <label
-                        htmlFor="name"
+                        htmlFor="team"
                         className="mb-2.5 block font-medium text-black dark:text-white"
                       >
-                        Name
+                        To which team do you belong?
                       </label>
                       <div className="relative">
                         <Field
-                          type="text"
-                          name="name"
-                          placeholder="Enter your full name"
+                          as="select"
+                          name="department"
                           className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                        />
-                        {errors.name && touched.name ? (
+                        >
+                          <option value="" disabled>
+                            Select your team
+                          </option>
+                          <option value="ACCOUNTS">ACCOUNTS</option>
+                          <option value="ADMINISTRATION">ADMINISTRATION</option>
+                          <option value="Alliance Banking & Finance">
+                            Alliance Banking & Finance
+                          </option>
+                          <option value="Branding">Branding</option>
+                          <option value="Customer Relationship">
+                            Customer Relationship
+                          </option>
+                          <option value="HR">HR</option>
+                          <option value="IT">IT</option>
+                          <option value="Marketing">Marketing</option>
+                          <option value="Onboarding">Onboarding</option>
+                          <option value="PRODUCTS ">PRODUCTS </option>
+                          <option value="SALES">SALES</option>
+                        </Field>
+                        {errors.department && touched.department ? (
                           <div className="text-red-500 mt-1 text-sm">
-                            {errors.name}
-                          </div>
-                        ) : null}
-                        <span className="absolute right-4 top-4">
-                          <svg
-                            className="fill-current"
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <g opacity="0.5">
-                              <path
-                                d="M11.0008 9.52185C13.5445 9.52185 15.607 7.5281 15.607 5.0531C15.607 2.5781 13.5445 0.584351 11.0008 0.584351C8.45703 0.584351 6.39453 2.5781 6.39453 5.0531C6.39453 7.5281 8.45703 9.52185 11.0008 9.52185ZM11.0008 2.1656C12.6852 2.1656 14.0602 3.47185 14.0602 5.08748C14.0602 6.7031 12.6852 8.00935 11.0008 8.00935C9.31641 8.00935 7.94141 6.7031 7.94141 5.08748C7.94141 3.47185 9.31641 2.1656 11.0008 2.1656Z"
-                                fill=""
-                              />
-                              <path
-                                d="M13.2352 11.0687H8.76641C5.08828 11.0687 2.09766 14.0937 2.09766 17.7719V20.625C2.09766 21.0375 2.44141 21.4156 2.88828 21.4156C3.33516 21.4156 3.67891 21.0719 3.67891 20.625V17.7719C3.67891 14.9531 5.98203 12.6156 8.83516 12.6156H13.2695C16.0883 12.6156 18.4258 14.9187 18.4258 17.7719V20.625C18.4258 21.0375 18.7695 21.4156 19.2164 21.4156C19.6633 21.4156 20.007 21.0719 20.007 20.625V17.7719C19.9039 14.0937 16.9133 11.0687 13.2352 11.0687Z"
-                                fill=""
-                              />
-                            </g>
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label
-                        htmlFor="employeeId"
-                        className="mb-2.5 block font-medium text-black dark:text-white"
-                      >
-                        Employee ID
-                      </label>
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="employeeId"
-                          placeholder="Example : ACE/HR/0000"
-                          className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                        />
-                        {errors.employeeId && touched.employeeId ? (
-                          <div className="text-red-500 mt-1 text-sm">
-                            {errors.employeeId}
-                          </div>
-                        ) : null}
-                        <span className="absolute right-4 top-4">
-                          <svg
-                            className="fill-current"
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <g opacity="0.5">
-                              <path
-                                d="M20 2H4C2.89 2 2 2.89 2 4V20C2 21.11 2.89 22 4 22H20C21.11 22 22 21.11 22 20V4C22 2.89 21.11 2 20 2ZM4 20V4H20V20H4ZM6 6H18V8H6V6ZM16 10H18V12H16V10ZM6 10H14V12H6V10ZM6 14H14V16H6V14ZM16 14H18V16H16V14Z"
-                                fill=""
-                              />
-                            </g>
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label
-                        htmlFor="email"
-                        className="mb-2.5 block font-medium text-black dark:text-white"
-                      >
-                        Email
-                      </label>
-                      <div className="relative">
-                        <Field
-                          type="email"
-                          name="email"
-                          placeholder="Enter your email"
-                          className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                        />
-                        {errors.email && touched.email ? (
-                          <div className="text-red-500 mt-1 text-sm">
-                            {errors.email}
-                          </div>
-                        ) : null}
-                        <span className="absolute right-4 top-4">
-                          <svg
-                            className="fill-current"
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <g opacity="0.5">
-                              <path
-                                d="M19.2516 3.30005H2.75156C1.58281 3.30005 0.585938 4.26255 0.585938 5.46567V16.6032C0.585938 17.7719 1.54844 18.7688 2.75156 18.7688H19.2516C20.4203 18.7688 21.4172 17.8063 21.4172 16.6032V5.4313C21.4172 4.26255 20.4203 3.30005 19.2516 3.30005ZM19.2516 4.84692C19.2859 4.84692 19.3203 4.84692 19.3547 4.84692L11.0016 10.2094L2.64844 4.84692C2.68281 4.84692 2.71719 4.84692 2.75156 4.84692H19.2516ZM19.2516 17.1532H2.75156C2.40781 17.1532 2.13281 16.8782 2.13281 16.5344V6.35942L10.1766 11.5157C10.4172 11.6875 10.6922 11.7563 10.9672 11.7563C11.2422 11.7563 11.5172 11.6875 11.7578 11.5157L19.8016 6.35942V16.5688C19.8703 16.9125 19.5953 17.1532 19.2516 17.1532Z"
-                                fill=""
-                              />
-                            </g>
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label
-                        htmlFor="phoneNumber"
-                        className="mb-2.5 block font-medium text-black dark:text-white"
-                      >
-                        Phone Number
-                      </label>
-                      <div className="relative">
-                        <Field
-                          type="text"
-                          name="phoneNumber"
-                          placeholder="Enter your 10 digit mobile number."
-                          className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                        />
-                        {errors.phoneNumber && touched.phoneNumber ? (
-                          <div className="text-red-500 mt-1 text-sm">
-                            {errors.phoneNumber}
+                            {errors.department}
                           </div>
                         ) : null}
                         <span className="absolute right-4 top-4">
@@ -380,78 +281,58 @@ const SignUp: React.FC = () => {
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
+                              d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
                             />
                           </svg>
                         </span>
                       </div>
                     </div>
+
                     <div className="mb-6">
                       <label
-                        htmlFor="password"
+                        htmlFor="designation"
                         className="mb-2.5 block font-medium text-black dark:text-white"
                       >
-                        Password
+                        Please provide your designation
                       </label>
                       <div className="relative">
                         <Field
-                          type="password"
-                          name="password"
-                          autoComplete="new-password"
-                          placeholder="Enter your password"
+                          type="text"
+                          name="designation"
+                          placeholder="Example: Software Developer"
                           className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                         />
-                        {errors.password && touched.password ? (
+                        {errors.designation && touched.designation ? (
                           <div className="text-red-500 mt-1 text-sm">
-                            {errors.password}
+                            {errors.designation}
                           </div>
                         ) : null}
                         <span className="absolute right-4 top-4">
                           <svg
-                            className="fill-current"
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
                             xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            className="size-6"
                           >
-                            <g opacity="0.5">
-                              <path
-                                d="M16.1547 6.80626V5.91251C16.1547 3.16251 14.0922 0.825009 11.4797 0.618759C10.0359 0.481259 8.59219 0.996884 7.52656 1.95938C6.46094 2.92188 5.84219 4.29688 5.84219 5.70626V6.80626C3.84844 7.18438 2.33594 8.93751 2.33594 11.0688V17.2906C2.33594 19.5594 4.19219 21.3813 6.42656 21.3813H15.5016C17.7703 21.3813 19.6266 19.525 19.6266 17.2563V11C19.6609 8.93751 18.1484 7.21876 16.1547 6.80626ZM8.55781 3.09376C9.31406 2.40626 10.3109 2.06251 11.3422 2.16563C13.1641 2.33751 14.6078 3.98751 14.6078 5.91251V6.70313H7.38906V5.67188C7.38906 4.70938 7.80156 3.78126 8.55781 3.09376ZM18.1141 17.2906C18.1141 18.7 16.9453 19.8688 15.5359 19.8688H6.46094C5.05156 19.8688 3.91719 18.7344 3.91719 17.325V11.0688C3.91719 9.52189 5.15469 8.28438 6.70156 8.28438H15.2953C16.8422 8.28438 18.1141 9.52188 18.1141 11V17.2906Z"
-                                fill=""
-                              />
-                              <path
-                                d="M10.9977 11.8594C10.5852 11.8594 10.207 12.2031 10.207 12.65V16.2594C10.207 16.6719 10.5508 17.05 10.9977 17.05C11.4102 17.05 11.7883 16.7063 11.7883 16.2594V12.6156C11.7883 12.2031 11.4102 11.8594 10.9977 11.8594Z"
-                                fill=""
-                              />
-                            </g>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z"
+                            />
                           </svg>
                         </span>
                       </div>
                     </div>
-                    {signupFailMessage && (
-                      <DangerAlert
-                        message1="Account creation failed"
-                        message2={signupFailMessage}
-                      />
-                    )}
-                    <div className="mb-5">
+                    <div className="mb-5 mt-3">
                       <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={loading}
                         className="mt-3 w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90"
                       >
-                        {isSubmitting ? "Submitting..." : "Create account"}
+                        {loading ? "Submitting..." : "Proceed to dashboard"}
                       </button>
-                    </div>
-
-                    <div className="mt-6 text-center">
-                      <p>
-                        Already have an account?{" "}
-                        <Link href="/auth/signin" className="text-primary">
-                          Sign in
-                        </Link>
-                      </p>
                     </div>
                   </Form>
                 )}
@@ -465,4 +346,4 @@ const SignUp: React.FC = () => {
   );
 };
 
-export default SignUp;
+export default ProfileCompletion;
